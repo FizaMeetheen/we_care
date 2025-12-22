@@ -58,32 +58,40 @@ const handleProceed = async () => {
     }
 
     try {
-      const result = await fetch(
-        "http://localhost:3000/create-checkout-session",
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            amount: donationDetails.amount,
-            title: announcement.title,
-            announcementId,
-          }),
-        }
-      );
-
-      const data = await result.json();
-
-      if (data.checkoutSessionUrl) {
-        window.location.href = data.checkoutSessionUrl;
-      } else {
-        toast.error("Unable to start payment");
-      }
-    } catch {
-      toast.error("Payment failed");
+  const response = await fetch(
+    "https://wecare-backend-2.onrender.com/create-checkout-session",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        amount: Number(donationDetails.amount),
+        title: announcement.title,
+        announcementId,
+      }),
     }
+  );
+
+  if (!response.ok) {
+    const errText = await response.text();
+    console.error("Stripe error:", errText);
+    return toast.error("Unable to start payment");
+  }
+
+  const data = await response.json();
+
+  if (data.checkoutSessionUrl) {
+    window.location.href = data.checkoutSessionUrl;
+  } else {
+    toast.error("Stripe session not created");
+  }
+} catch (error) {
+  console.error(error);
+  toast.error("Payment failed");
+}
+
 
     return;
   }
